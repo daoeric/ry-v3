@@ -42,3 +42,18 @@ export function delAuth(id) {
     method: 'delete'
   })
 }
+export function approveAuth(data) {
+  return request({
+    url: '/business/auth/approve',
+    method: 'put',
+    data: data
+  })
+}
+
+export function rejectAuth(data) {
+  return request({
+    url: '/business/auth/approve',
+    method: 'put',
+    data: data
+  })
+}

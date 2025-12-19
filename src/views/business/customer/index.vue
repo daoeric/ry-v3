@@ -9,50 +9,10 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="密码" prop="password">
-        <el-input
-          v-model="queryParams.password"
-          placeholder="请输入密码"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="邀请码" prop="inviteCode">
         <el-input
           v-model="queryParams.inviteCode"
           placeholder="请输入邀请码"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="path" prop="path">
-        <el-input
-          v-model="queryParams.path"
-          placeholder="请输入path"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="父级ID" prop="pId">
-        <el-input
-          v-model="queryParams.pId"
-          placeholder="请输入父级ID"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="余额" prop="balance">
-        <el-input
-          v-model="queryParams.balance"
-          placeholder="请输入余额"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="冻结余额" prop="lockBalance">
-        <el-input
-          v-model="queryParams.lockBalance"
-          placeholder="请输入冻结余额"
           clearable
           @keyup.enter="handleQuery"
         />
@@ -65,32 +25,8 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="提款密码" prop="withdrawPassword">
-        <el-input
-          v-model="queryParams.withdrawPassword"
-          placeholder="请输入提款密码"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="最后登录IP" prop="lastLoginAddress">
-        <el-input
-          v-model="queryParams.lastLoginAddress"
-          placeholder="请输入最后登录IP"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="最后登录时间" prop="lastLoginTime">
-        <el-date-picker clearable
-          v-model="queryParams.lastLoginTime"
-          type="date"
-          value-format="YYYY-MM-DD"
-          placeholder="请选择最后登录时间">
-        </el-date-picker>
-      </el-form-item>
-      <el-form-item label="0正常 1启用" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择0正常 1启用" clearable>
+      <el-form-item label="状态" prop="status">
+        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
           <el-option
             v-for="dict in sys_normal_disable"
             :key="dict.value"
@@ -106,15 +42,15 @@
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button
-          type="primary"
-          plain
-          icon="Plus"
-          @click="handleAdd"
-          v-hasPermi="['business:customer:add']"
-        >新增</el-button>
-      </el-col>
+<!--      <el-col :span="1.5">-->
+<!--        <el-button-->
+<!--          type="primary"-->
+<!--          plain-->
+<!--          icon="Plus"-->
+<!--          @click="handleAdd"-->
+<!--          v-hasPermi="['business:customer:add']"-->
+<!--        >新增</el-button>-->
+<!--      </el-col>-->
       <el-col :span="1.5">
         <el-button
           type="success"
@@ -151,21 +87,19 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="用户ID" align="center" prop="id" />
       <el-table-column label="用户名" align="center" prop="username" />
-      <el-table-column label="密码" align="center" prop="password" />
       <el-table-column label="邀请码" align="center" prop="inviteCode" />
       <el-table-column label="path" align="center" prop="path" />
-      <el-table-column label="父级ID" align="center" prop="pId" />
+      <el-table-column label="父级ID" align="center" prop="pid" />
       <el-table-column label="余额" align="center" prop="balance" />
       <el-table-column label="冻结余额" align="center" prop="lockBalance" />
       <el-table-column label="VIP等级" align="center" prop="grade" />
-      <el-table-column label="提款密码" align="center" prop="withdrawPassword" />
       <el-table-column label="最后登录IP" align="center" prop="lastLoginAddress" />
       <el-table-column label="最后登录时间" align="center" prop="lastLoginTime" width="180">
         <template #default="scope">
           <span>{{ parseTime(scope.row.lastLoginTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="0正常 1启用" align="center" prop="status">
+      <el-table-column label="状态" align="center" prop="status">
         <template #default="scope">
           <dict-tag :options="sys_normal_disable" :value="scope.row.status"/>
         </template>
@@ -177,7 +111,7 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -190,44 +124,15 @@
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="customerRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" placeholder="请输入用户名" />
-        </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" placeholder="请输入密码" />
+          <el-input v-model="form.username" placeholder="请输入用户名" readonly />
         </el-form-item>
         <el-form-item label="邀请码" prop="inviteCode">
-          <el-input v-model="form.inviteCode" placeholder="请输入邀请码" />
-        </el-form-item>
-        <el-form-item label="path" prop="path">
-          <el-input v-model="form.path" placeholder="请输入path" />
-        </el-form-item>
-        <el-form-item label="父级ID" prop="pId">
-          <el-input v-model="form.pId" placeholder="请输入父级ID" />
-        </el-form-item>
-        <el-form-item label="余额" prop="balance">
-          <el-input v-model="form.balance" placeholder="请输入余额" />
-        </el-form-item>
-        <el-form-item label="冻结余额" prop="lockBalance">
-          <el-input v-model="form.lockBalance" placeholder="请输入冻结余额" />
+          <el-input v-model="form.inviteCode" placeholder="请输入邀请码" readonly/>
         </el-form-item>
         <el-form-item label="VIP等级" prop="grade">
           <el-input v-model="form.grade" placeholder="请输入VIP等级" />
         </el-form-item>
-        <el-form-item label="提款密码" prop="withdrawPassword">
-          <el-input v-model="form.withdrawPassword" placeholder="请输入提款密码" />
-        </el-form-item>
-        <el-form-item label="最后登录IP" prop="lastLoginAddress">
-          <el-input v-model="form.lastLoginAddress" placeholder="请输入最后登录IP" />
-        </el-form-item>
-        <el-form-item label="最后登录时间" prop="lastLoginTime">
-          <el-date-picker clearable
-            v-model="form.lastLoginTime"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="请选择最后登录时间">
-          </el-date-picker>
-        </el-form-item>
-        <el-form-item label="0正常 1启用" prop="status">
+        <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
             <el-radio
               v-for="dict in sys_normal_disable"

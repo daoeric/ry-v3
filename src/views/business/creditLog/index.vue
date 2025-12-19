@@ -1,34 +1,10 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="商户号" prop="customerId">
+      <el-form-item label="用户ID" prop="customerId">
         <el-input
           v-model="queryParams.customerId"
-          placeholder="请输入商户号"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="操作金额，可以为负数" prop="opearteAmount">
-        <el-input
-          v-model="queryParams.opearteAmount"
-          placeholder="请输入操作金额，可以为负数"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="操作前金额" prop="preBalance">
-        <el-input
-          v-model="queryParams.preBalance"
-          placeholder="请输入操作前金额"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="操作后金额" prop="postBalance">
-        <el-input
-          v-model="queryParams.postBalance"
-          placeholder="请输入操作后金额"
+          placeholder="请输入用户ID"
           clearable
           @keyup.enter="handleQuery"
         />
@@ -91,7 +67,7 @@
 
     <el-table v-loading="loading" :data="creditLogList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="${comment}" align="center" prop="id" />
+      <el-table-column label="ID" align="center" prop="id" />
       <el-table-column label="商户号" align="center" prop="customerId" />
       <el-table-column label="操作类型" align="center" prop="opearteType" />
       <el-table-column label="操作金额，可以为负数" align="center" prop="opearteAmount" />
@@ -99,14 +75,14 @@
       <el-table-column label="操作后金额" align="center" prop="postBalance" />
       <el-table-column label="关联ID" align="center" prop="refId" />
       <el-table-column label="备注" align="center" prop="remark" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-        <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['business:creditLog:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['business:creditLog:remove']">删除</el-button>
-        </template>
-      </el-table-column>
+<!--      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">-->
+<!--        <template #default="scope">-->
+<!--          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['business:creditLog:edit']">修改</el-button>-->
+<!--          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['business:creditLog:remove']">删除</el-button>-->
+<!--        </template>-->
+<!--      </el-table-column>-->
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
