@@ -1,5 +1,6 @@
 <template>
   <div class="app-container">
+
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="真实姓名" prop="realName">
         <el-input
@@ -119,19 +120,19 @@
       <el-table-column label="审核人" align="center" prop="auditBy" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button 
-            link 
-            type="success" 
-            icon="Check" 
-            @click="handleApproveSingle(scope.row)" 
+          <el-button
+            link
+            type="success"
+            icon="Check"
+            @click="handleApproveSingle(scope.row)"
             v-hasPermi="['business:auth:edit']"
             :disabled="scope.row.status !== 0"
           >通过</el-button>
-          <el-button 
-            link 
-            type="danger" 
-            icon="CircleClose" 
-            @click="handleRejectSingle(scope.row)" 
+          <el-button
+            link
+            type="danger"
+            icon="CircleClose"
+            @click="handleRejectSingle(scope.row)"
             v-hasPermi="['business:auth:remove']"
             :disabled="scope.row.status !== 0"
           >拒绝</el-button>
@@ -215,6 +216,7 @@
 
 <script setup name="Auth">
 import { listAuth, getAuth, delAuth, addAuth, updateAuth, approveAuth, rejectAuth } from "@/api/business/auth";
+import { getOnlineCount } from "@/api/monitor/online";
 
 const { proxy } = getCurrentInstance();
 const { approve_status } = proxy.useDict('approve_status');
@@ -231,6 +233,7 @@ const total = ref(0);
 const title = ref("");
 const auditTitle = ref("");
 const isPendingStatus = ref(false);
+const onlineCount = ref(0);
 
 const data = reactive({
   form: {},
@@ -281,6 +284,16 @@ function getList() {
     authList.value = response.rows;
     total.value = response.total;
     loading.value = false;
+  });
+}
+
+// 获取在线用户数量
+function getOnlineUserCount() {
+  getOnlineCount().then(response => {
+    onlineCount.value = response.data || 0;
+  }).catch(error => {
+    console.error('获取在线用户数量失败:', error);
+    onlineCount.value = 0;
   });
 }
 
@@ -341,7 +354,7 @@ function handleSelectionChange(selection) {
   ids.value = selection.map(item => item.id);
   single.value = selection.length != 1;
   multiple.value = !selection.length;
-  
+
   // 检查选中的记录是否都是待审核状态
   isPendingStatus.value = selection.every(item => item.status === 0);
 }
@@ -392,7 +405,7 @@ function submitAudit() {
   proxy.$refs["auditRef"].validate(valid => {
     if (valid) {
       const operation = auditForm.value.status === 1 ? approveAuth : rejectAuth;
-      
+
       // 如果是批量操作
       if (ids.value.length > 0 && !auditForm.value.id) {
         const promises = ids.value.map(id => {
@@ -403,7 +416,7 @@ function submitAudit() {
           };
           return operation(params);
         });
-        
+
         Promise.all(promises).then(() => {
           proxy.$modal.msgSuccess(`${auditForm.value.status === 1 ? '通过' : '拒绝'}成功`);
           auditOpen.value = false;
@@ -418,7 +431,7 @@ function submitAudit() {
           auditReason: auditForm.value.auditReason,
           status: auditForm.value.status
         };
-        
+
         operation(params).then(response => {
           proxy.$modal.msgSuccess(`${auditForm.value.status === 1 ? '通过' : '拒绝'}成功`);
           auditOpen.value = false;
@@ -470,5 +483,37 @@ function handleExport() {
   }, `auth_${new Date().getTime()}.xlsx`)
 }
 
-getList();
+// 页面加载时获取在线用户数量
+onMounted(() => {
+  getList();
+  getOnlineUserCount();
+});
 </script>
+
+<style scoped>
+.mb20 {
+  margin-bottom: 20px;
+}
+
+.online-stats {
+  display: flex;
+  justify-content: space-around;
+}
+
+.stat-item {
+  text-align: center;
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: bold;
+  color: #409EFF;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #606266;
+}
+</style>

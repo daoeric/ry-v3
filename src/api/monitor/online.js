@@ -16,3 +16,11 @@ export function forceLogout(tokenId) {
     method: 'delete'
   })
 }
+
+// 查询在线用户数量
+export function getOnlineCount() {
+  return request({
+    url: '/monitor/merchantOnline/count',
+    method: 'get'
+  })
+}

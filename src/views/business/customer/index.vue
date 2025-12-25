@@ -80,6 +80,11 @@
           v-hasPermi="['business:customer:export']"
         >导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-tag size="large">在线人数：<span style="color: red">{{onlineCount}}</span></el-tag>
+      </el-col>
+
+
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -102,6 +107,11 @@
       <el-table-column label="状态" align="center" prop="status">
         <template #default="scope">
           <dict-tag :options="sys_normal_disable" :value="scope.row.status"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="实名" align="center" prop="realnameStatus">
+        <template #default="scope">
+          <dict-tag :options="realname_status" :value="scope.row.realnameStatus"/>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -154,9 +164,10 @@
 
 <script setup name="Customer">
 import { listCustomer, getCustomer, delCustomer, addCustomer, updateCustomer } from "@/api/business/customer";
-
+import { getOnlineCount } from "@/api/monitor/online";
 const { proxy } = getCurrentInstance();
 const { sys_normal_disable } = proxy.useDict('sys_normal_disable');
+const { realname_status } = proxy.useDict('realname_status');
 
 const customerList = ref([]);
 const open = ref(false);
@@ -167,6 +178,7 @@ const single = ref(true);
 const multiple = ref(true);
 const total = ref(0);
 const title = ref("");
+const onlineCount = ref(0);
 
 const data = reactive({
   form: {},
@@ -215,6 +227,16 @@ function getList() {
 function cancel() {
   open.value = false;
   reset();
+}
+
+// 获取在线用户数量
+function getOnlineUserCount() {
+  getOnlineCount().then(response => {
+    onlineCount.value = response.count || 0;
+  }).catch(error => {
+    console.error('获取在线用户数量失败:', error);
+    onlineCount.value = 0;
+  });
 }
 
 // 表单重置
@@ -316,4 +338,5 @@ function handleExport() {
 }
 
 getList();
+getOnlineUserCount();
 </script>
