@@ -35,6 +35,14 @@ export function updateCustomer(data) {
   })
 }
 
+export function renew(data) {
+  return request({
+    url: '/business/customer/renew',
+    method: 'put',
+    data: data
+  })
+}
+
 // 删除用户管理
 export function delCustomer(id) {
   return request({

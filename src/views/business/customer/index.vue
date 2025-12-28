@@ -88,36 +88,43 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="customerList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="用户ID" align="center" prop="id" />
-      <el-table-column label="用户名" align="center" prop="username" />
-      <el-table-column label="邀请码" align="center" prop="inviteCode" />
-      <el-table-column label="path" align="center" prop="path" />
-      <el-table-column label="父级ID" align="center" prop="pid" />
-      <el-table-column label="余额" align="center" prop="balance" />
-      <el-table-column label="冻结余额" align="center" prop="lockBalance" />
-      <el-table-column label="VIP等级" align="center" prop="grade" />
-      <el-table-column label="最后登录IP" align="center" prop="lastLoginAddress" />
-      <el-table-column label="最后登录时间" align="center" prop="lastLoginTime" width="180">
+    <el-table v-loading="loading" :data="customerList" @selection-change="handleSelectionChange" :header-cell-style="{background: '#f8f9fa', color: '#555'}" :cell-style="{padding: '8px 0'}" row-key="id" height="600">
+      <el-table-column type="selection" width="55" align="center" fixed="left" />
+      <el-table-column label="用户ID" align="center" prop="id" width="100" fixed="left" />
+      <el-table-column label="用户名" align="center" prop="username" width="120" fixed="left" />
+      <el-table-column label="邀请码" align="center" prop="inviteCode" width="120" show-overflow-tooltip />
+      <el-table-column label="path" align="center" prop="path" width="120" show-overflow-tooltip />
+      <el-table-column label="父级ID" align="center" prop="pid" width="100" />
+      <el-table-column label="余额" align="center" prop="balance" width="100" />
+      <el-table-column label="冻结余额" align="center" prop="lockBalance" width="100" />
+      <el-table-column label="额外次数" align="center" prop="scanCount" width="100" />
+      <el-table-column label="VIP等级" align="center" prop="grade" width="100" />
+      <el-table-column label="VIP过期时间" align="center" prop="expireTime" width="160">
+        <template #default="scope">
+          <span>{{ parseTime(scope.row.expireTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="最后登录IP" align="center" prop="lastLoginAddress" width="130" show-overflow-tooltip />
+      <el-table-column label="最后登录时间" align="center" prop="lastLoginTime" width="120">
         <template #default="scope">
           <span>{{ parseTime(scope.row.lastLoginTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="状态" align="center" prop="status">
+      <el-table-column label="状态" align="center" prop="status" width="100">
         <template #default="scope">
           <dict-tag :options="sys_normal_disable" :value="scope.row.status"/>
         </template>
       </el-table-column>
-      <el-table-column label="实名" align="center" prop="realnameStatus">
+      <el-table-column label="实名" align="center" prop="realnameStatus" width="100">
         <template #default="scope">
           <dict-tag :options="realname_status" :value="scope.row.realnameStatus"/>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="200" fixed="right">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['business:customer:edit']">修改</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['business:customer:remove']">删除</el-button>
+          <el-button link type="primary" icon="Clock" @click="handleRenew(scope.row)" v-hasPermi="['business:customer:edit']">续签会员</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -159,11 +166,39 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 续签会员对话框 -->
+    <el-dialog :title="renewTitle" v-model="renewOpen" width="500px" append-to-body>
+      <el-form ref="renewRef" :model="renewForm" :rules="renewRules" label-width="100px">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="renewForm.username" placeholder="用户名" readonly />
+        </el-form-item>
+        <el-form-item label="当前到期时间" prop="currentExpireTime">
+          <el-input v-model="renewForm.currentExpireTime" placeholder="当前到期时间" readonly />
+        </el-form-item>
+        <el-form-item label="新的到期时间" prop="newExpireTime">
+          <el-date-picker
+            v-model="renewForm.newExpireTime"
+            type="datetime"
+            placeholder="选择新的到期时间"
+            format="YYYY-MM-DD HH:mm:ss"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            style="width: 100%"
+          ></el-date-picker>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="submitRenewForm">确 定</el-button>
+          <el-button @click="cancelRenew">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="Customer">
-import { listCustomer, getCustomer, delCustomer, addCustomer, updateCustomer } from "@/api/business/customer";
+import { listCustomer, getCustomer, delCustomer, addCustomer, updateCustomer,renew } from "@/api/business/customer";
 import { getOnlineCount } from "@/api/monitor/online";
 const { proxy } = getCurrentInstance();
 const { sys_normal_disable } = proxy.useDict('sys_normal_disable');
@@ -179,6 +214,8 @@ const multiple = ref(true);
 const total = ref(0);
 const title = ref("");
 const onlineCount = ref(0);
+const renewOpen = ref(false);
+const renewTitle = ref("");
 
 const data = reactive({
   form: {},
@@ -198,6 +235,13 @@ const data = reactive({
     lastLoginTime: null,
     status: null
   },
+  renewForm: {
+    id: null,
+    username: null,
+    currentExpireTime: null,
+    renewDuration: null,
+    newExpireTime: null
+  },
   rules: {
     username: [
       { required: true, message: "用户名不能为空", trigger: "blur" }
@@ -208,10 +252,15 @@ const data = reactive({
     inviteCode: [
       { required: true, message: "邀请码不能为空", trigger: "blur" }
     ],
+  },
+  renewRules: {
+    newExpireTime: [
+      { required: true, message: "请选择新的到期时间", trigger: "change" }
+    ]
   }
 });
 
-const { queryParams, form, rules } = toRefs(data);
+const { queryParams, form, renewForm, rules, renewRules } = toRefs(data);
 
 /** 查询用户管理列表 */
 function getList() {
@@ -335,6 +384,89 @@ function handleExport() {
   proxy.download('business/customer/export', {
     ...queryParams.value
   }, `customer_${new Date().getTime()}.xlsx`)
+}
+
+// 续签会员按钮操作
+function handleRenew(row) {
+  const _id = row.id || ids.value;
+  getCustomer(_id).then(response => {
+    const customer = response.data;
+    renewForm.value.id = customer.id;
+    renewForm.value.username = customer.username;
+    renewForm.value.currentExpireTime = customer.expireTime ? proxy.parseTime(customer.expireTime, '{y}-{m}-{d} {h}:{i}:{s}') : '无';
+    renewForm.value.newExpireTime = customer.expireTime;
+    renewForm.value.renewDuration = null; // Reset duration when opening the dialog
+    renewOpen.value = true;
+    renewTitle.value = "续签会员 - " + customer.username;
+  });
+}
+
+// 处理续签时长选择变化
+function handleRenewDurationChange(value) {
+  if (!value || !renewForm.value.currentExpireTime) {
+    return;
+  }
+
+  // 获取当前过期时间，如果没有则使用当前时间
+  let baseTime = null;
+  if (renewForm.value.currentExpireTime !== '无' && renewForm.value.currentExpireTime) {
+    baseTime = new Date(renewForm.value.currentExpireTime);
+  } else {
+    baseTime = new Date(); // 如果当前没有过期时间，则从当前时间开始计算
+  }
+
+  // 计算新的过期时间
+  const newExpireTime = new Date(baseTime);
+  if (value === 1) {
+    newExpireTime.setMonth(newExpireTime.getMonth() + 1);
+  } else if (value === 3) {
+    newExpireTime.setMonth(newExpireTime.getMonth() + 3);
+  } else if (value === 6) {
+    newExpireTime.setMonth(newExpireTime.getMonth() + 6);
+  } else if (value === 12) {
+    newExpireTime.setFullYear(newExpireTime.getFullYear() + 1);
+  }
+
+  // 设置新的过期时间
+  renewForm.value.newExpireTime = newExpireTime.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+// 取消续签
+function cancelRenew() {
+  renewOpen.value = false;
+  resetRenew();
+}
+
+// 表单重置（续签）
+function resetRenew() {
+  renewForm.value = {
+    id: null,
+    username: null,
+    currentExpireTime: null,
+    renewDuration: null,
+    newExpireTime: null
+  };
+  proxy.resetForm("renewRef");
+}
+
+// 续签提交
+function submitRenewForm() {
+  proxy.$refs["renewRef"].validate(valid => {
+    if (valid) {
+      // 更新客户信息，设置新的过期时间
+      const updateData = {
+        id: renewForm.value.id,
+        expireTime: renewForm.value.newExpireTime
+      };
+
+      renew(updateData).then(response => {
+        proxy.$modal.msgSuccess("续签成功");
+        renewOpen.value = false;
+        resetRenew();
+        getList();d
+      });
+    }
+  });
 }
 
 getList();

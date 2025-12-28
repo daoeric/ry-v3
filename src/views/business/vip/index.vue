@@ -14,6 +14,8 @@
       <el-table-column label="最大奖励" align="center" prop="maxReward" />
       <el-table-column label="分享奖励扫码次数" align="center" prop="shareCount" />
       <el-table-column label="分享奖励" align="center" prop="shareReward" />
+
+      <el-table-column label="晋升条件" align="center" prop="depositCondition" />
       <el-table-column label="备注" align="center" prop="remark" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
@@ -34,6 +36,10 @@
     <!-- 添加或修改VIP管理对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="vipRef" :model="form" :rules="rules" label-width="80px">
+        <el-form-item label="VIP等级" prop="scanLimit">
+          <el-input v-model="form.id" readonly />
+        </el-form-item>
+<!--        <el-tag></el-tag>-->
         <el-form-item label="扫码次数" prop="scanLimit">
           <el-input v-model="form.scanLimit" placeholder="请输入扫码次数" />
         </el-form-item>
@@ -51,6 +57,9 @@
         </el-form-item>
         <el-form-item label="分享奖励" prop="shareReward">
           <el-input v-model="form.shareReward" placeholder="请输入分享奖励" />
+        </el-form-item>
+        <el-form-item label="晋升存款" prop="shareReward">
+          <el-input v-model="form.depositCondition" placeholder="晋升存款" />
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" placeholder="请输入备注" />
@@ -163,7 +172,7 @@ function handleAdd() {
 /** 修改按钮操作 */
 function handleUpdate(row) {
   reset();
-  const _id = row.id || ids.value
+  const _id = row.id
   getVip(_id).then(response => {
     form.value = response.data;
     open.value = true;
