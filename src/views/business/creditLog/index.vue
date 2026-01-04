@@ -17,6 +17,16 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
+      <el-form-item label="操作类型" prop="opearteType">
+        <el-select v-model="queryParams.opearteType" placeholder="请选择操作类型" clearable>
+          <el-option
+              v-for="dict in bill_operate_type"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -69,12 +79,21 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="ID" align="center" prop="id" />
       <el-table-column label="商户号" align="center" prop="customerId" />
-      <el-table-column label="操作类型" align="center" prop="opearteType" />
+      <el-table-column label="操作类型" align="center" prop="opearteType">
+        <template #default="scope">
+          <dict-tag :options="bill_operate_type" :value="scope.row.opearteType"/>
+        </template>
+      </el-table-column>
       <el-table-column label="操作金额，可以为负数" align="center" prop="opearteAmount" />
       <el-table-column label="操作前金额" align="center" prop="preBalance" />
       <el-table-column label="操作后金额" align="center" prop="postBalance" />
       <el-table-column label="关联ID" align="center" prop="refId" />
       <el-table-column label="备注" align="center" prop="remark" />
+      <el-table-column label="创建时间" align="center" prop="successTime" width="180">
+        <template #default="scope">
+          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
+        </template>
+      </el-table-column>
 <!--      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">-->
 <!--        <template #default="scope">-->
 <!--          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['business:creditLog:edit']">修改</el-button>-->
@@ -137,6 +156,7 @@ const single = ref(true);
 const multiple = ref(true);
 const total = ref(0);
 const title = ref("");
+const { bill_operate_type } = proxy.useDict('bill_operate_type');
 
 const data = reactive({
   form: {},

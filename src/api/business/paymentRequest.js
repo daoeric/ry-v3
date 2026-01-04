@@ -42,3 +42,12 @@ export function delPaymentRequest(requestId) {
     method: 'delete'
   })
 }
+
+// 手动通过订单
+export function manualApprove(data) {
+  return request({
+    url: '/business/paymentRequest/manualApprove',
+    method: 'post',
+    data: data
+  })
+}

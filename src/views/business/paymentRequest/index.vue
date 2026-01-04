@@ -27,22 +27,6 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="订单金额" prop="orderAmount">
-        <el-input
-          v-model="queryParams.orderAmount"
-          placeholder="请输入订单金额"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="真实金额" prop="realAmount">
-        <el-input
-          v-model="queryParams.realAmount"
-          placeholder="请输入真实金额"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="成功时间" prop="successTime">
         <el-date-picker clearable
           v-model="queryParams.successTime"
@@ -60,35 +44,6 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
-          type="primary"
-          plain
-          icon="Plus"
-          @click="handleAdd"
-          v-hasPermi="['business:paymentRequest:add']"
-        >新增</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="success"
-          plain
-          icon="Edit"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['business:paymentRequest:edit']"
-        >修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="danger"
-          plain
-          icon="Delete"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['business:paymentRequest:remove']"
-        >删除</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
           type="warning"
           plain
           icon="Download"
@@ -101,7 +56,7 @@
 
     <el-table v-loading="loading" :data="paymentRequestList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="${comment}" align="center" prop="requestId" />
+      <el-table-column label="订单号" align="center" prop="requestId" />
       <el-table-column label="商户号" align="center" prop="customerId" />
       <el-table-column label="商户名" align="center" prop="username" />
       <el-table-column label="支付状态" align="center" prop="status">
@@ -112,19 +67,23 @@
       <el-table-column label="订单金额" align="center" prop="orderAmount" />
       <el-table-column label="备注" align="center" prop="remark" />
       <el-table-column label="真实金额" align="center" prop="realAmount" />
+      <el-table-column label="订单时间" align="center" prop="successTime" width="180">
+        <template #default="scope">
+          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="成功时间" align="center" prop="successTime" width="180">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.successTime, '{y}-{m}-{d}') }}</span>
+          <span>{{ parseTime(scope.row.successTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['business:paymentRequest:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['business:paymentRequest:remove']">删除</el-button>
+          <el-button link type="primary" icon="Edit" @click="handleManualApprove(scope.row)" :disabled="scope.row.status === 2" v-hasPermi="['business:paymentRequest:manualApprove']">手动通过</el-button>
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -176,11 +135,35 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 手动通过对话框 -->
+    <el-dialog title="手动通过" v-model="manualApproveOpen" width="500px" append-to-body>
+      <el-form ref="manualApproveRef" :model="manualApproveForm" :rules="manualApproveRules" label-width="80px">
+        <el-form-item label="订单号" prop="requestId">
+          <el-input v-model="manualApproveForm.requestId" disabled />
+        </el-form-item>
+        <el-form-item label="订单金额" prop="orderAmount">
+          <el-input v-model="manualApproveForm.orderAmount" disabled />
+        </el-form-item>
+        <el-form-item label="真实金额" prop="realAmount">
+          <el-input v-model="manualApproveForm.realAmount" placeholder="请输入真实金额" />
+        </el-form-item>
+        <el-form-item label="备注" prop="remark">
+          <el-input v-model="manualApproveForm.remark" type="textarea" placeholder="请输入备注" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="submitManualApprove">确 定</el-button>
+          <el-button @click="cancelManualApprove">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="PaymentRequest">
-import { listPaymentRequest, getPaymentRequest, delPaymentRequest, addPaymentRequest, updatePaymentRequest } from "@/api/business/paymentRequest";
+import { listPaymentRequest, getPaymentRequest, delPaymentRequest, addPaymentRequest, updatePaymentRequest, manualApprove } from "@/api/business/paymentRequest";
 
 const { proxy } = getCurrentInstance();
 const { order_status } = proxy.useDict('order_status');
@@ -217,10 +200,17 @@ const data = reactive({
     orderAmount: [
       { required: true, message: "订单金额不能为空", trigger: "blur" }
     ],
+  },
+  manualApproveOpen: false,
+  manualApproveForm: {},
+  manualApproveRules: {
+    realAmount: [
+      { required: true, message: "真实金额不能为空", trigger: "blur" }
+    ],
   }
 });
 
-const { queryParams, form, rules } = toRefs(data);
+const { queryParams, form, rules, manualApproveOpen, manualApproveForm, manualApproveRules } = toRefs(data);
 
 /** 查询存入订单列表 */
 function getList() {
@@ -292,6 +282,48 @@ function handleUpdate(row) {
     open.value = true;
     title.value = "修改存入订单";
   });
+}
+
+/** 手动通过按钮操作 */
+function handleManualApprove(row) {
+  resetManualApprove();
+  manualApproveForm.value = {
+    requestId: row.requestId,
+    orderAmount: row.orderAmount,
+    realAmount: row.orderAmount, // 默认真实金额等于订单金额
+    remark: null
+  };
+  manualApproveOpen.value = true;
+}
+
+/** 手动通过表单重置 */
+function resetManualApprove() {
+  manualApproveForm.value = {
+    requestId: null,
+    orderAmount: null,
+    realAmount: null,
+    remark: null
+  };
+  proxy.resetForm("manualApproveRef");
+}
+
+/** 提交手动通过 */
+function submitManualApprove() {
+  proxy.$refs["manualApproveRef"].validate(valid => {
+    if (valid) {
+      manualApprove(manualApproveForm.value).then(response => {
+        proxy.$modal.msgSuccess("手动通过成功");
+        manualApproveOpen.value = false;
+        getList();
+      });
+    }
+  });
+}
+
+/** 取消手动通过 */
+function cancelManualApprove() {
+  manualApproveOpen.value = false;
+  resetManualApprove();
 }
 
 /** 提交按钮 */
