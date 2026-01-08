@@ -42,3 +42,18 @@ export function delWithdrawRequest(withdrawId) {
     method: 'delete'
   })
 }
+export function approveWithdraw(data) {
+  return request({
+    url: '/business/withdrawRequest/approve',
+    method: 'put',
+    data: data
+  })
+}
+
+export function rejectWithdraw(data) {
+  return request({
+    url: '/business/withdrawRequest/approve',
+    method: 'put',
+    data: data
+  })
+}
