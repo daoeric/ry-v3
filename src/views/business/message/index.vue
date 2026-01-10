@@ -9,24 +9,16 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="商户ID" prop="customerId">
-        <el-input
-          v-model="queryParams.customerId"
-          placeholder="请输入商户ID"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
-          <el-option
-            v-for="dict in message_status"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
+<!--      <el-form-item label="状态" prop="status">-->
+<!--        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>-->
+<!--          <el-option-->
+<!--            v-for="dict in message_status"-->
+<!--            :key="dict.value"-->
+<!--            :label="dict.label"-->
+<!--            :value="dict.value"-->
+<!--          />-->
+<!--        </el-select>-->
+<!--      </el-form-item>-->
       <el-form-item label="消息类型" prop="type">
         <el-select v-model="queryParams.type" placeholder="请选择消息类型" clearable>
           <el-option
@@ -37,14 +29,14 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="阅读时间" prop="readTime">
-        <el-date-picker clearable
-          v-model="queryParams.readTime"
-          type="date"
-          value-format="YYYY-MM-DD"
-          placeholder="请选择阅读时间">
-        </el-date-picker>
-      </el-form-item>
+<!--      <el-form-item label="阅读时间" prop="readTime">-->
+<!--        <el-date-picker clearable-->
+<!--          v-model="queryParams.readTime"-->
+<!--          type="date"-->
+<!--          value-format="YYYY-MM-DD"-->
+<!--          placeholder="请选择阅读时间">-->
+<!--        </el-date-picker>-->
+<!--      </el-form-item>-->
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -98,20 +90,14 @@
       <el-table-column label="主键" align="center" prop="id" />
       <el-table-column label="消息标题" align="center" prop="title" />
       <el-table-column label="消息内容" align="center" prop="content" />
-      <el-table-column label="商户ID" align="center" prop="customerId" />
-      <el-table-column label="状态" align="center" prop="status">
-        <template #default="scope">
-          <dict-tag :options="message_status" :value="scope.row.status"/>
-        </template>
-      </el-table-column>
       <el-table-column label="消息类型" align="center" prop="type">
         <template #default="scope">
           <dict-tag :options="message_type" :value="scope.row.type"/>
         </template>
       </el-table-column>
-      <el-table-column label="阅读时间" align="center" prop="readTime" width="180">
+      <el-table-column label="创建时间" align="center" prop="readTime" width="180">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.readTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
+          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -138,9 +124,6 @@
         </el-form-item>
         <el-form-item label="消息内容">
           <editor v-model="form.content" :min-height="192"/>
-        </el-form-item>
-        <el-form-item label="商户ID" prop="customerId">
-          <el-input v-model="form.customerId" placeholder="请输入商户ID" />
         </el-form-item>
         <el-form-item label="消息类型" prop="type">
           <el-select v-model="form.type" placeholder="请选择消息类型">
@@ -186,7 +169,6 @@ const data = reactive({
     pageSize: 10,
     title: null,
     content: null,
-    customerId: null,
     status: null,
     type: null,
     readTime: null

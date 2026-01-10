@@ -40,6 +40,19 @@
           <img :src="codeUrl" @click="getCode" class="login-code-img"/>
         </div>
       </el-form-item>
+      <el-form-item prop="googleCode" v-if="captchaEnabled">
+        <el-input
+            v-model="loginForm.googleCode"
+            size="large"
+            auto-complete="off"
+            placeholder="谷歌验证码，未绑定可以不填"
+            @keyup.enter="handleLogin"
+        >
+          <template #prefix><svg-icon icon-class="validCode" class="el-input__icon input-icon" /></template>
+        </el-input>
+      </el-form-item>
+
+
       <el-checkbox v-model="loginForm.rememberMe" style="margin:0px 0px 25px 0px;">记住密码</el-checkbox>
       <el-form-item style="width:100%;">
         <el-button
@@ -80,7 +93,8 @@ const loginForm = ref({
   password: "admin123",
   rememberMe: false,
   code: "",
-  uuid: ""
+  uuid: "",
+  googleCode: ""
 });
 
 const loginRules = {
