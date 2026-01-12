@@ -78,10 +78,11 @@
 </template>
 
 <script setup>
-import { getCodeImg } from "@/api/login";
-import Cookies from "js-cookie";
-import { encrypt, decrypt } from "@/utils/jsencrypt";
+import { login as apiLogin, getCodeImg,bindGoogleAuthCodeWithUsername } from '@/api/login';
+import Cookies from 'js-cookie';
+import { encrypt, decrypt } from '@/utils/jsencrypt';
 import useUserStore from '@/store/modules/user'
+import { setToken } from '@/utils/auth'
 
 const userStore = useUserStore()
 const route = useRoute();
@@ -100,7 +101,11 @@ const loginForm = ref({
 const loginRules = {
   username: [{ required: true, trigger: "blur", message: "请输入您的账号" }],
   password: [{ required: true, trigger: "blur", message: "请输入您的密码" }],
-  code: [{ required: true, trigger: "change", message: "请输入验证码" }]
+  code: [{ required: true, trigger: "change", message: "请输入验证码" }],
+  googleCode: [
+    { required: false, trigger: "blur", message: "请输入Google验证码" },
+    { pattern: /^\d{6}$/, message: "请输入6位数字验证码", trigger: "blur" }
+  ]
 };
 
 const codeUrl = ref("");
@@ -119,28 +124,63 @@ function handleLogin() {
   proxy.$refs.loginRef.validate(valid => {
     if (valid) {
       loading.value = true;
-      // 勾选了需要记住密码设置在 cookie 中设置记住用户名和密码
-      if (loginForm.value.rememberMe) {
-        Cookies.set("username", loginForm.value.username, { expires: 30 });
-        Cookies.set("password", encrypt(loginForm.value.password), { expires: 30 });
-        Cookies.set("rememberMe", loginForm.value.rememberMe, { expires: 30 });
-      } else {
-        // 否则移除
-        Cookies.remove("username");
-        Cookies.remove("password");
-        Cookies.remove("rememberMe");
-      }
-      // 调用action的登录方法
-      userStore.login(loginForm.value).then(() => {
-        const query = route.query;
-        const otherQueryParams = Object.keys(query).reduce((acc, cur) => {
-          if (cur !== "redirect") {
-            acc[cur] = query[cur];
+
+      // 调用登录接口
+      apiLogin(
+        loginForm.value.username,
+        loginForm.value.password,
+        loginForm.value.code,
+        loginForm.value.uuid,
+        loginForm.value.googleCode
+      ).then(res => {
+        // 检查是否需要绑定Google验证器
+        if (res.code === 200 && res.needGoogleBind) {
+          // 需要绑定Google验证器
+          const googleSecret = res.googleSecret;
+          const googleCode = res.googleCode;
+
+          // 引导用户完成Google验证器绑定
+          showBindGoogleAuthDialog(googleCode, googleSecret, loginForm.value.username);
+          loading.value = false;
+          return;
+        } else if (res.code === 200) {
+          // 登录成功，执行正常登录流程
+          // 勾选了需要记住密码设置在 cookie 中设置记住用户名和密码
+          if (loginForm.value.rememberMe) {
+            Cookies.set("username", loginForm.value.username, { expires: 30 });
+            Cookies.set("password", encrypt(loginForm.value.password), { expires: 30 });
+            Cookies.set("rememberMe", loginForm.value.rememberMe, { expires: 30 });
+          } else {
+            // 否则移除
+            Cookies.remove("username");
+            Cookies.remove("password");
+            Cookies.remove("rememberMe");
           }
-          return acc;
-        }, {});
-        router.push({ path: redirect.value || "/", query: otherQueryParams });
-      }).catch(() => {
+
+          setToken(res.token);
+          userStore.token = res.token;
+
+          // 获取用户信息
+          userStore.getInfo().then(() => {
+            const query = route.query;
+            const otherQueryParams = Object.keys(query).reduce((acc, cur) => {
+              if (cur !== "redirect") {
+                acc[cur] = query[cur];
+              }
+              return acc;
+            }, {});
+            router.push({ path: redirect.value || "/", query: otherQueryParams });
+          });
+        } else {
+          proxy.$modal.msgError(res.msg || '登录失败');
+          loading.value = false;
+          // 重新获取验证码
+          if (captchaEnabled.value) {
+            getCode();
+          }
+        }
+      }).catch(error => {
+        proxy.$modal.msgError(error.msg || '登录请求失败');
         loading.value = false;
         // 重新获取验证码
         if (captchaEnabled.value) {
@@ -149,6 +189,14 @@ function handleLogin() {
       });
     }
   });
+}
+
+// 显示Google验证器绑定对话框
+function showBindGoogleAuthDialog(qrCode, secret, username) {
+  // 通过全局事件触发Google验证器绑定对话框
+  window.dispatchEvent(new CustomEvent('show-google-auth-bind', {
+    detail: { qrCode, secret, username: username }
+  }));
 }
 
 function getCode() {

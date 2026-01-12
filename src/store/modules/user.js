@@ -11,10 +11,14 @@ const useUserStore = defineStore(
       name: '',
       avatar: '',
       roles: [],
-      permissions: []
+      permissions: [],
+      // 是否需要绑定Google验证器
+      needBindGoogleAuth: false,
+      // Google验证器绑定信息
+      googleAuthInfo: {}
     }),
     actions: {
-      // 登录
+      // 登录方法现在由页面直接处理，这里保留用于兼容
       login(userInfo) {
         const username = userInfo.username.trim()
         const password = userInfo.password
@@ -22,7 +26,12 @@ const useUserStore = defineStore(
         const uuid = userInfo.uuid
         const googleCode = userInfo.googleCode
         return new Promise((resolve, reject) => {
-          login(username, password, code, uuid,googleCode).then(res => {
+          login(username, password, code, uuid, googleCode).then(res => {
+            // 如果需要绑定Google验证器，则不设置token
+            if (res.needGoogleBind) {
+              reject(new Error('需要绑定Google验证器'));
+              return;
+            }
             setToken(res.token)
             this.token = res.token
             resolve()
@@ -31,6 +40,21 @@ const useUserStore = defineStore(
           })
         })
       },
+
+
+      // 初始化Google验证器状态
+      async initGoogleAuthStatus() {
+        try {
+          const res = await checkGoogleAuthStatus();
+          if (res.code === 200) {
+            const { isGoogleAuthEnabled, needBind } = res.data || {};
+            this.needBindGoogleAuth = !!needBind;
+          }
+        } catch (error) {
+          console.error('初始化Google验证器状态失败:', error);
+        }
+      },
+
       // 获取用户信息
       getInfo() {
         return new Promise((resolve, reject) => {

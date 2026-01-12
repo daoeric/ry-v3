@@ -133,3 +133,11 @@ export function deptTreeSelect() {
     method: 'get'
   })
 }
+
+// 重置谷歌验证器密钥
+export function resetGoogleAuth() {
+  return request({
+    url: '/system/user/profile/google/reset',
+    method: 'put'
+  })
+}

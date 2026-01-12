@@ -11,13 +11,14 @@
       </el-form-item>
       <el-form-item>
       <el-button type="primary" @click="submit">保存</el-button>
+      <el-button type="warning" @click="resetGoogleAuthKey">重置谷歌密钥</el-button>
       <el-button type="danger" @click="close">关闭</el-button>
       </el-form-item>
    </el-form>
 </template>
 
 <script setup>
-import { updateUserPwd } from "@/api/system/user";
+import { updateUserPwd, resetGoogleAuth } from "@/api/system/user";
 
 const { proxy } = getCurrentInstance();
 
@@ -54,4 +55,15 @@ function submit() {
 function close() {
   proxy.$tab.closePage();
 };
+
+/** 重置谷歌密钥 */
+function resetGoogleAuthKey() {
+  proxy.$modal.confirm('确定要重置谷歌验证器密钥吗？').then(() => {
+    return resetGoogleAuth();
+  }).then(() => {
+    proxy.$modal.msgSuccess("谷歌验证器密钥已重置");
+  }).catch(() => {
+    // 用户取消操作，不执行任何操作
+  });
+}
 </script>
